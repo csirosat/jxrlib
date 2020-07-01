@@ -63,7 +63,12 @@ endif
 
 CD=cd
 MK_DIR=mkdir -p
-CFLAGS=-I. -Icommon/include -I$(DIR_SYS) $(ENDIANFLAG) -D__ANSI__ -DDISABLE_PERF_MEASUREMENT -w $(PICFLAG) -O
+
+CFLAGS += -I. -Icommon/include -I$(DIR_SYS) $(ENDIANFLAG) -D__ANSI__ -DDISABLE_PERF_MEASUREMENT -w $(PICFLAG)
+# to compile for debug: make DEBUG=1
+ifdef DEBUG
+    CFLAGS += -O0 -g
+endif
 
 STATIC_LIBRARIES=$(DIR_BUILD)/libjxrglue.a $(DIR_BUILD)/libjpegxr.a
 SHARED_LIBRARIES=$(DIR_BUILD)/libjxrglue.so $(DIR_BUILD)/libjpegxr.so
@@ -191,7 +196,7 @@ $(DIR_BUILD)/$(DECAPP): $(DIR_SRC)/$(DIR_EXEC)/$(DECAPP).c $(LIBRARIES)
 all: $(DIR_BUILD)/$(ENCAPP) $(DIR_BUILD)/$(DECAPP) $(LIBRARIES)
 
 clean:
-	rm -rf $(DIR_BUILD)/*App $(DIR_BUILD)/*.o $(DIR_BUILD)/libj*.a $(DIR_BUILD)/libj*.so $(DIR_BUILD)/libjxr.pc
+	rm -rf $(DIR_BUILD)
 
 $(DIR_BUILD)/libjxr.pc: $(DIR_SRC)/libjxr.pc.in
 	@python -c 'import os; d = { "DIR_INSTALL": "$(DIR_INSTALL)", "JXR_VERSION": "$(JXR_VERSION)", "JXR_ENDIAN": "$(ENDIANFLAG)" }; fin = open("$<", "r"); fout = open("$@", "w+"); fout.writelines( [ l % d for l in fin.readlines()])'
