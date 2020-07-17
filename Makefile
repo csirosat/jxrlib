@@ -65,10 +65,6 @@ CD=cd
 MK_DIR=mkdir -p
 
 CFLAGS += -I. -Icommon/include -I$(DIR_SYS) $(ENDIANFLAG) -D__ANSI__ -DDISABLE_PERF_MEASUREMENT -w $(PICFLAG)
-# to compile for debug: make DEBUG=1
-ifdef DEBUG
-    CFLAGS += -O0 -g
-endif
 
 STATIC_LIBRARIES=$(DIR_BUILD)/libjxrglue.a $(DIR_BUILD)/libjpegxr.a
 SHARED_LIBRARIES=$(DIR_BUILD)/libjxrglue.so $(DIR_BUILD)/libjpegxr.so
