@@ -1,14 +1,14 @@
 //*@@@+++@@@@******************************************************************
 //
-// Copyright © Microsoft Corp.
+// Copyright ï¿½ Microsoft Corp.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// • Redistributions of source code must retain the above copyright notice,
+// ï¿½ Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the following disclaimer.
-// • Redistributions in binary form must reproduce the above copyright notice,
+// ï¿½ Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 // 
@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include <JXRGlue.h>
+#include "tools/mem_dbg.h"
 
 #pragma pack(push, 1)
 #pragma pack(pop)
@@ -114,9 +115,9 @@ ERR PKImageEncode_WritePixels_IYUV(
     uYSize = cLine * pIE->uWidth;
     uUVSize = (uYSize >> 2);
 
-    pY = (U8 *)malloc(uYSize);
-    pU = (U8 *)malloc(uUVSize);
-    pV = (U8 *)malloc(uUVSize);
+    pY = (U8 *)malloc_dbg(uYSize);
+    pU = (U8 *)malloc_dbg(uUVSize);
+    pV = (U8 *)malloc_dbg(uUVSize);
 
     if(pY == NULL || pU == NULL || pV == NULL)
     {
@@ -153,11 +154,11 @@ ERR PKImageEncode_WritePixels_IYUV(
     Call(pS->Write(pS, pV, uUVSize));
 
     if(pY!=NULL)
-        free(pY);
+        free_dbg(pY);
     if(pU!=NULL)
-        free(pU);
+        free_dbg(pU);
     if(pV!=NULL)
-        free(pV);
+        free_dbg(pV);
 
     pIE->idxCurrentLine += cLine;
 
@@ -192,9 +193,9 @@ ERR PKImageEncode_WritePixels_YUV422(
     uYSize = cLine * pIE->uWidth;
     uUVSize = (uYSize >> 1);
 
-    pY = (U8 *)malloc(uYSize);
-    pU = (U8 *)malloc(uUVSize);
-    pV = (U8 *)malloc(uUVSize);
+    pY = (U8 *)malloc_dbg(uYSize);
+    pU = (U8 *)malloc_dbg(uUVSize);
+    pV = (U8 *)malloc_dbg(uUVSize);
 
     if(pY == NULL || pU == NULL || pV == NULL)
     {
@@ -228,11 +229,11 @@ ERR PKImageEncode_WritePixels_YUV422(
     Call(pS->Write(pS, pV, uUVSize));
 
     if(pY!=NULL)
-        free(pY);
+        free_dbg(pY);
     if(pU!=NULL)
-        free(pU);
+        free_dbg(pU);
     if(pV!=NULL)
-        free(pV);
+        free_dbg(pV);
 
     pIE->idxCurrentLine += cLine;
 
@@ -267,9 +268,9 @@ ERR PKImageEncode_WritePixels_YUV444(
     uYSize = cLine * pIE->uWidth;
     uUVSize = uYSize;
 
-    pY = (U8 *)malloc(uYSize);
-    pU = (U8 *)malloc(uUVSize);
-    pV = (U8 *)malloc(uUVSize);
+    pY = (U8 *)malloc_dbg(uYSize);
+    pU = (U8 *)malloc_dbg(uUVSize);
+    pV = (U8 *)malloc_dbg(uUVSize);
 
     if(pY == NULL || pU == NULL || pV == NULL)
     {
@@ -300,11 +301,11 @@ ERR PKImageEncode_WritePixels_YUV444(
     Call(pS->Write(pS, pV, uUVSize));
 
     if(pY!=NULL)
-        free(pY);
+        free_dbg(pY);
     if(pU!=NULL)
-        free(pU);
+        free_dbg(pU);
     if(pV!=NULL)
-        free(pV);
+        free_dbg(pV);
 
     pIE->idxCurrentLine += cLine;
 
@@ -485,9 +486,9 @@ ERR PKImageDecode_Copy_IYUV(
     uYSize = pID->uWidth * pID->uHeight;
     uUVSize = (uYSize >> 2);
 
-    pY = (U8 *)malloc(uYSize);
-    pU = (U8 *)malloc(uUVSize);
-    pV = (U8 *)malloc(uUVSize);
+    pY = (U8 *)malloc_dbg(uYSize);
+    pU = (U8 *)malloc_dbg(uUVSize);
+    pV = (U8 *)malloc_dbg(uUVSize);
 
     if(pY == NULL || pU == NULL || pV == NULL)
     {
@@ -525,11 +526,11 @@ ERR PKImageDecode_Copy_IYUV(
     pU-=uUVSize;
     pV-=uUVSize;
     if(pY!=NULL)
-        free(pY);
+        free_dbg(pY);
     if(pU!=NULL)
-        free(pU);
+        free_dbg(pU);
     if(pV!=NULL)
-        free(pV);
+        free_dbg(pV);
 
 Cleanup:
     return err;
@@ -558,9 +559,9 @@ ERR PKImageDecode_Copy_YUV422(
     uYSize = pID->uWidth * pID->uHeight;
     uUVSize = (uYSize >> 1);
 
-    pY = (U8 *)malloc(uYSize);
-    pU = (U8 *)malloc(uUVSize);
-    pV = (U8 *)malloc(uUVSize);
+    pY = (U8 *)malloc_dbg(uYSize);
+    pU = (U8 *)malloc_dbg(uUVSize);
+    pV = (U8 *)malloc_dbg(uUVSize);
 
     if(pY == NULL || pU == NULL || pV == NULL)
     {
@@ -595,11 +596,11 @@ ERR PKImageDecode_Copy_YUV422(
     pU-=uUVSize;
     pV-=uUVSize;
     if(pY!=NULL)
-        free(pY);
+        free_dbg(pY);
     if(pU!=NULL)
-        free(pU);
+        free_dbg(pU);
     if(pV!=NULL)
-        free(pV);
+        free_dbg(pV);
 
 Cleanup:
     return err;
@@ -629,9 +630,9 @@ ERR PKImageDecode_Copy_YUV444(
     uYSize = pID->uWidth * pID->uHeight;
     uUVSize = uYSize;
 
-    pY = (U8 *)malloc(uYSize);
-    pU = (U8 *)malloc(uUVSize);
-    pV = (U8 *)malloc(uUVSize);
+    pY = (U8 *)malloc_dbg(uYSize);
+    pU = (U8 *)malloc_dbg(uUVSize);
+    pV = (U8 *)malloc_dbg(uUVSize);
 
     if(pY == NULL || pU == NULL || pV == NULL)
     {
@@ -662,11 +663,11 @@ ERR PKImageDecode_Copy_YUV444(
     pU-=uUVSize;
     pV-=uUVSize;
     if(pY!=NULL)
-        free(pY);
+        free_dbg(pY);
     if(pU!=NULL)
-        free(pU);
+        free_dbg(pU);
     if(pV!=NULL)
-        free(pV);
+        free_dbg(pV);
 
 Cleanup:
     return err;

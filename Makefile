@@ -1,14 +1,14 @@
 ##//*@@@+++@@@@******************************************************************
 ##//
-##// Copyright � Microsoft Corp.
+##// Copyright ��� Microsoft Corp.
 ##// All rights reserved.
 ##// 
 ##// Redistribution and use in source and binary forms, with or without
 ##// modification, are permitted provided that the following conditions are met:
 ##// 
-##// � Redistributions of source code must retain the above copyright notice,
+##// ��� Redistributions of source code must retain the above copyright notice,
 ##//   this list of conditions and the following disclaimer.
-##// � Redistributions in binary form must reproduce the above copyright notice,
+##// ��� Redistributions in binary form must reproduce the above copyright notice,
 ##//   this list of conditions and the following disclaimer in the documentation
 ##//   and/or other materials provided with the distribution.
 ##// 
@@ -39,6 +39,7 @@ DIR_ENC=image/encode
 DIR_GLUE=jxrgluelib
 DIR_TEST=jxrtestlib
 DIR_EXEC=jxrencoderdecoder
+DIR_TOOLS=tools
 
 ## Are we building shared?
 ifneq ($(SHARED),)
@@ -117,12 +118,12 @@ $(DIR_BUILD)/$(DIR_ENC)/%.o: $(DIR_SRC)/$(DIR_ENC)/%.c
 ## JPEG XR library
 ##
 
-$(DIR_BUILD)/libjpegxr.a: $(OBJ_ENC) $(OBJ_DEC) $(OBJ_SYS)
+$(DIR_BUILD)/libjpegxr.a: $(OBJ_TOOLS) $(OBJ_ENC) $(OBJ_DEC) $(OBJ_SYS)
 	$(MK_DIR) $(@D)
-	$(AR) rvu $@ $(OBJ_ENC) $(OBJ_DEC) $(OBJ_SYS)
+	$(AR) rvu $@ $(OBJ_TOOLS) $(OBJ_ENC) $(OBJ_DEC) $(OBJ_SYS)
 	ranlib $@
 
-$(DIR_BUILD)/libjpegxr.so: $(OBJ_ENC) $(OBJ_DEC) $(OBJ_SYS)
+$(DIR_BUILD)/libjpegxr.so: $(OBJ_TOOLS) $(OBJ_ENC) $(OBJ_DEC) $(OBJ_SYS)
 	$(MK_DIR) $(@D)
 	$(CC) -shared $? -o $@
 
@@ -140,6 +141,17 @@ $(DIR_BUILD)/$(DIR_GLUE)/%.o: $(DIR_SRC)/$(DIR_GLUE)/%.c
 
 ##--------------------------------
 ##
+## Tools files
+##
+SRC_TOOLS=mem_dbg.c JXRGlobals.c
+OBJ_TOOLS=$(patsubst %.c, $(DIR_BUILD)/$(DIR_TOOLS)/%.o, $(SRC_TOOLS))
+
+$(DIR_BUILD)/$(DIR_TOOLS)/%.o: $(DIR_SRC)/$(DIR_TOOLS)/%.c
+	$(MK_DIR) $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
+	
+##--------------------------------
+##
 ## Test files
 ##
 
@@ -155,12 +167,12 @@ $(DIR_BUILD)/$(DIR_TEST)/%.o: $(DIR_SRC)/$(DIR_TEST)/%.c
 ## JPEG XR Glue library
 ##
 
-$(DIR_BUILD)/libjxrglue.a: $(OBJ_GLUE) $(OBJ_TEST)
+$(DIR_BUILD)/libjxrglue.a: $(OBJ_TOOLS) $(OBJ_GLUE) $(OBJ_TEST)
 	$(MK_DIR) $(@D)
-	$(AR) rvu $@ $(OBJ_GLUE) $(OBJ_TEST)
+	$(AR) rvu $@ $(OBJ_TOOLS) $(OBJ_GLUE) $(OBJ_TEST)
 	ranlib $@
 
-$(DIR_BUILD)/libjxrglue.so: $(OBJ_GLUE) $(OBJ_TEST)
+$(DIR_BUILD)/libjxrglue.so: $(OBJ_TOOLS) $(OBJ_GLUE) $(OBJ_TEST)
 	$(MK_DIR) $(@D)
 	$(CC) -shared $? -o $@
 

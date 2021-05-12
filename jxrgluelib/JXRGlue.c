@@ -1,14 +1,14 @@
 //*@@@+++@@@@******************************************************************
 //
-// Copyright © Microsoft Corp.
+// Copyright ï¿½ Microsoft Corp.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// • Redistributions of source code must retain the above copyright notice,
+// ï¿½ Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the following disclaimer.
-// • Redistributions in binary form must reproduce the above copyright notice,
+// ï¿½ Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 // 
@@ -27,10 +27,11 @@
 //*@@@---@@@@******************************************************************
 #include <stdlib.h>
 #include <ctype.h>
+#include "tools/JXRGlobals.h"
+#include "tools/mem_dbg.h"
 
 #define INITGUID
 #include <JXRGlue.h>
-
 //================================================================
 const PKIID IID_PKImageScanEncode = 1;
 const PKIID IID_PKImageFrameEncode = 2;
@@ -45,16 +46,21 @@ const PKIID IID_PKImageWmpDecode = 201;
 //================================================================
 ERR PKAlloc(void** ppv, size_t cb)
 {
-    *ppv = calloc(1, cb);
+#ifdef MEMHACK
+	*ppv = realloc_dbg(*ppv, cb);
+	if (*ppv)
+		memset(*ppv, 0, 1*cb);
+#else
+	*ppv = calloc_dbg(1, cb);
+#endif
     return *ppv ? WMP_errSuccess : WMP_errOutOfMemory;
 }
 
-
 ERR PKFree(void** ppv)
 {
-    if (ppv)
+    if (ppv && *ppv)
     {
-        free(*ppv);
+        free_dbg(*ppv);
         *ppv = NULL;
     }
 
@@ -69,7 +75,7 @@ ERR PKAllocAligned(void** ppv, size_t cb, size_t iAlign)
     const size_t c_cbBlockSize = cb + sizeof(void*) + iAlign - 1;
 
     *ppv = NULL;
-    pOrigPtr = calloc(1, c_cbBlockSize);
+    pOrigPtr = calloc_dbg(1, c_cbBlockSize);
     if (NULL == pOrigPtr)
         return WMP_errOutOfMemory;
 
@@ -95,7 +101,7 @@ ERR PKFreeAligned(void** ppv)
     {
         U8 **ppOrigPtr = (U8**)((U8*)(*ppv) - sizeof(void*));
         assert(*ppOrigPtr <= (U8*)ppOrigPtr); // Something's wrong if pOrigPtr points forward
-        free(*ppOrigPtr);
+        free_dbg(*ppOrigPtr);
         *ppv = NULL;
     }
     return WMP_errSuccess;
@@ -767,8 +773,12 @@ ERR PKImageEncode_Create(PKImageEncode** ppIE)
     ERR err = WMP_errSuccess;
     PKImageEncode* pIE = NULL;
 
+#ifdef MEMHACK
+    Call(PKAlloc(&g_jxr_enc_mem_ptr[MEMPTR_PKIMAGEENCODECREATE], sizeof(**ppIE)));
+    *ppIE = g_jxr_enc_mem_ptr[MEMPTR_PKIMAGEENCODECREATE];
+#else
     Call(PKAlloc((void **) ppIE, sizeof(**ppIE)));
-
+#endif
     pIE = *ppIE;
     pIE->Initialize = PKImageEncode_Initialize;
     pIE->Terminate = PKImageEncode_Terminate;

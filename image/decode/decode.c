@@ -1,14 +1,14 @@
 //*@@@+++@@@@******************************************************************
 //
-// Copyright © Microsoft Corp.
+// Copyright ï¿½ Microsoft Corp.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// • Redistributions of source code must retain the above copyright notice,
+// ï¿½ Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the following disclaimer.
-// • Redistributions in binary form must reproduce the above copyright notice,
+// ï¿½ Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 // 
@@ -39,6 +39,7 @@ Revision History:
 *******************************************************************************/
 #include "strcodec.h"
 #include "decode.h"
+#include "tools/mem_dbg.h"
 
 #ifdef MEM_TRACE
 #define TRACE_MALLOC    1
@@ -57,7 +58,7 @@ static Void CleanAH(CAdaptiveHuffman **ppAdHuff)
     if (NULL != ppAdHuff) {
         pAdHuff = *ppAdHuff;
         if (NULL != pAdHuff) {
-            free(pAdHuff);
+            free_dbg(pAdHuff);
         }
         *ppAdHuff = NULL;
     }
@@ -81,7 +82,11 @@ static Int InitializeAH(CAdaptiveHuffman **ppAdHuff, Int iSym)
 {
     Int iMemStatus = 0;
 
+#ifdef MEMHACK
+    CAdaptiveHuffman *pAdHuff = Allocate(NULL, iSym, DECODER);
+#else
     CAdaptiveHuffman *pAdHuff = Allocate(iSym, DECODER);
+#endif
     if (pAdHuff == NULL) {
         iMemStatus = -1;    // out of memory
         goto ErrorExit;
@@ -97,7 +102,7 @@ static Int InitializeAH(CAdaptiveHuffman **ppAdHuff, Int iSym)
 
 ErrorExit:
     if (pAdHuff) {
-        free(pAdHuff);
+        free_dbg(pAdHuff);
     }
     *ppAdHuff = NULL;
     if (-1 == iMemStatus) {
@@ -121,7 +126,7 @@ Int AllocateCodingContextDec(CWMImageStrCodec *pSC, Int iNumContexts)
     if (pSC == NULL)
         return ICERR_ERROR;
 
-    pSC->m_pCodingContext = malloc (iNumContexts * sizeof (CCodingContext));
+    pSC->m_pCodingContext = malloc_dbg (iNumContexts * sizeof (CCodingContext));
     if (pSC->m_pCodingContext == NULL) {
         pSC->cNumCodingContext = 0;
         return ICERR_ERROR;
@@ -194,7 +199,7 @@ Void FreeCodingContextDec(CWMImageStrCodec *pSC)
             for (k = 0; k < NUMVLCTABLES; k++)
                 CleanAH (&pContext->m_pAHexpt[k]);
         }
-        free (pSC->m_pCodingContext);
+        free_dbg(pSC->m_pCodingContext);
     }
 }
 

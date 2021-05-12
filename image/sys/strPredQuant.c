@@ -1,14 +1,14 @@
 //*@@@+++@@@@******************************************************************
 //
-// Copyright © Microsoft Corp.
+// Copyright ï¿½ Microsoft Corp.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// • Redistributions of source code must retain the above copyright notice,
+// ï¿½ Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the following disclaimer.
-// • Redistributions in binary form must reproduce the above copyright notice,
+// ï¿½ Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 // 
@@ -27,6 +27,7 @@
 //*@@@---@@@@******************************************************************
 
 #include "strcodec.h"
+#include "tools/mem_dbg.h"
 
 #define ORIENT_WEIGHT 4
 
@@ -134,11 +135,19 @@ Int allocatePredInfo(CWMImageStrCodec *pSC)
     if(b32Bit) // integer overlow/underflow check for 32-bit system
         if(((mbWidth >> 16) * iChannels * 2 * sizeof(CWMIPredInfo)) & 0xffff0000)
             return ICERR_ERROR;    
-    pMemory = (CWMIPredInfo *)malloc(mbWidth * iChannels * 2 * sizeof(CWMIPredInfo));
-    if (pMemory == NULL)
-        return ICERR_ERROR;
 
+#ifdef MEMHACK
+    pSC->pPredInfoMemory = (CWMIPredInfo *)realloc_dbg(pSC->pPredInfoMemory, mbWidth * iChannels * 2 * sizeof(CWMIPredInfo));
+    if (pSC->pPredInfoMemory == NULL)
+        return ICERR_ERROR;
+    pMemory = pSC->pPredInfoMemory;
+#else
+    pMemory = (CWMIPredInfo *)malloc_dbg(mbWidth * iChannels * 2 * sizeof(CWMIPredInfo));
+    if (pMemory == NULL)
+    	return ICERR_ERROR;
     pSC->pPredInfoMemory = pMemory;
+#endif
+
     for(i = 0; i < iChannels; i ++){
         pSC->PredInfo[i] = pMemory;
         pMemory += mbWidth;
@@ -158,7 +167,7 @@ Int allocatePredInfo(CWMImageStrCodec *pSC)
 Void freePredInfo(CWMImageStrCodec *pSC)
 {
     if (pSC->pPredInfoMemory)
-        free (pSC->pPredInfoMemory);
+        free_dbg(pSC->pPredInfoMemory);
     pSC->pPredInfoMemory = NULL;
 }
 

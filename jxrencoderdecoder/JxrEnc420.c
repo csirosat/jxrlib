@@ -1,14 +1,14 @@
 //*@@@+++@@@@******************************************************************
 //
-// Copyright © Microsoft Corp.
+// Copyright ï¿½ Microsoft Corp.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// • Redistributions of source code must retain the above copyright notice,
+// ï¿½ Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the following disclaimer.
-// • Redistributions in binary form must reproduce the above copyright notice,
+// ï¿½ Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 // 
@@ -28,6 +28,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <JXRTest.h>
 #include <errno.h>
+#include "tools/mem_dbg.h"
 
 // optimized for PSNR
 const int QP_TAB_SIZE = 11;
@@ -137,7 +138,7 @@ main(int argc, char* argv[])
 
     int yuv_size = width*height+2*(width>>1)*(height>>1);
 
-    unsigned char *image_buffer = (unsigned char*)malloc(yuv_size);
+    unsigned char *image_buffer = (unsigned char*)malloc_dbg(yuv_size);
 
     // set encoder parameters including quality
     {
@@ -186,7 +187,7 @@ Cleanup:
          if( pFactory )      pFactory->Release(&pFactory);
     }
 
-    free(image_buffer);
+    free_dbg(image_buffer);
 
     return 0;
 }

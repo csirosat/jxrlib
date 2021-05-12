@@ -1,14 +1,14 @@
 //*@@@+++@@@@******************************************************************
 //
-// Copyright © Microsoft Corp.
+// Copyright ï¿½ Microsoft Corp.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// • Redistributions of source code must retain the above copyright notice,
+// ï¿½ Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the following disclaimer.
-// • Redistributions in binary form must reproduce the above copyright notice,
+// ï¿½ Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 // 
@@ -30,6 +30,11 @@
 #include "strTransform.h"
 #include <math.h>
 #include "perfTimer.h"
+#include "tools/mem_dbg.h"
+#include "tools/JXRGlobals.h"
+#include <unistd.h>
+#include <fcntl.h>
+
 
 #ifdef MEM_TRACE
 #define TRACE_MALLOC    1
@@ -49,7 +54,6 @@ extern char L1WW[];
 #endif // X86OPT_INLINE
 
 Int inputMBRow(CWMImageStrCodec *);
-
 #if defined(WMP_OPT_SSE2) || defined(WMP_OPT_CC_ENC) || defined(WMP_OPT_TRFM_ENC)
 void StrEncOpt(CWMImageStrCodec* pSC);
 #endif // OPT defined
@@ -435,17 +439,17 @@ Int StrIOEncInit(CWMImageStrCodec* pSC)
 #endif
         char * pFilename;
 
-        pSC->ppWStream = (struct WMPStream **)malloc(pSC->cNumBitIO * sizeof(struct WMPStream *));
+        pSC->ppWStream = (struct WMPStream **)malloc_dbg(pSC->cNumBitIO * sizeof(struct WMPStream *));
         if(pSC->ppWStream == NULL) return ICERR_ERROR;
         memset(pSC->ppWStream, 0, pSC->cNumBitIO * sizeof(struct WMPStream *));
 
         if (pSC->cmbHeight * pSC->cmbWidth * pSC->WMISCP.cChannel >= MAX_MEMORY_SIZE_IN_WORDS) {
 #ifdef _WINDOWS_
-            pSC->ppTempFile = (TCHAR **)malloc(pSC->cNumBitIO * sizeof(TCHAR *));
+            pSC->ppTempFile = (TCHAR **)malloc_dbg(pSC->cNumBitIO * sizeof(TCHAR *));
             if(pSC->ppTempFile == NULL) return ICERR_ERROR;
             memset(pSC->ppTempFile, 0, pSC->cNumBitIO * sizeof(TCHAR *)); 
 #else
-            pSC->ppTempFile = (char **)malloc(pSC->cNumBitIO * sizeof(char *));
+            pSC->ppTempFile = (char **)malloc_dbg(pSC->cNumBitIO * sizeof(char *));
             if(pSC->ppTempFile == NULL) return ICERR_ERROR;
             memset(pSC->ppTempFile, 0, pSC->cNumBitIO * sizeof(char *));
 #endif
@@ -455,7 +459,7 @@ Int StrIOEncInit(CWMImageStrCodec* pSC)
             if (pSC->cmbHeight * pSC->cmbWidth * pSC->WMISCP.cChannel >= MAX_MEMORY_SIZE_IN_WORDS) {
 #if defined(_WINDOWS_) || defined(UNDER_CE)  // tmpnam does not exist in VS2005 WinCE CRT              
                 Bool bUnicode = sizeof(TCHAR) == 2;
-                pSC->ppTempFile[i] = (TCHAR *)malloc(MAX_PATH * sizeof(TCHAR));
+                pSC->ppTempFile[i] = (TCHAR *)malloc_dbg(MAX_PATH * sizeof(TCHAR));
                 if(pSC->ppTempFile[i] == NULL) return ICERR_ERROR;
 
                 pFilename = (char *)pSC->ppTempFile[i];
@@ -479,7 +483,7 @@ Int StrIOEncInit(CWMImageStrCodec* pSC)
                 }
 
 #else //DPK needs to support ANSI 
-                pSC->ppTempFile[i] = (char *)malloc(FILENAME_MAX * sizeof(char));
+                pSC->ppTempFile[i] = (char *)malloc_dbg(FILENAME_MAX * sizeof(char));
                 if(pSC->ppTempFile[i] == NULL) return ICERR_ERROR;
 
                 if ((pFilename = tmpnam(NULL)) == NULL)
@@ -616,6 +620,8 @@ Int copyTo(struct WMPStream * pSrc, struct WMPStream * pDst, size_t iBytes)
 Int StrIOEncTerm(CWMImageStrCodec* pSC)
 {
     BitIOInfo * pIO = pSC->pIOHeader;
+    int fd;
+    FILE *fid;
 
     fillToByte(pIO);
 
@@ -704,7 +710,12 @@ Int StrIOEncTerm(CWMImageStrCodec* pSC)
             for(i = 0; i < pSC->cNumBitIO; i ++){
                 if(pSC->ppWStream && pSC->ppWStream[i]){
                     if((*(pSC->ppWStream + i))->state.file.pFile){
-                        fclose((*(pSC->ppWStream + i))->state.file.pFile);
+                    	fid = (*(pSC->ppWStream + i))->state.file.pFile;
+                        fd = fileno(fid);
+                        fflush(fid);
+                        fsync(fd);
+                        posix_fadvise(fd, 0, 0, POSIX_FADV_DONTNEED);
+                        fclose(fid);
 #ifdef _WINDOWS_
                         if(DeleteFileA((LPCSTR)pSC->ppTempFile[i]) == 0)
                             return ICERR_ERROR;
@@ -715,16 +726,16 @@ Int StrIOEncTerm(CWMImageStrCodec* pSC)
                     }
 
                     if (*(pSC->ppWStream + i))
-                        free(*(pSC->ppWStream + i));
+                        free_dbg(*(pSC->ppWStream + i));
                 }
                 if(pSC->ppTempFile){
                     if(pSC->ppTempFile[i])
-                        free(pSC->ppTempFile[i]);
+                        free_dbg(pSC->ppTempFile[i]);
                 }
             }
 
             if(pSC->ppTempFile)
-                free(pSC->ppTempFile);
+                free_dbg(pSC->ppTempFile);
         }
         else{
             for(i = 0; i < pSC->cNumBitIO; i ++){
@@ -733,10 +744,10 @@ Int StrIOEncTerm(CWMImageStrCodec* pSC)
             }
         }
 
-        free(pSC->ppWStream);
+        free_dbg(pSC->ppWStream);
 
-        free(pSC->m_ppBitIO);
-        free(pSC->pIndexTable);
+        free_dbg(pSC->m_ppBitIO);
+        free_dbg(pSC->pIndexTable);
     }
 
     return 0;
@@ -936,18 +947,22 @@ Int StrEncInit(CWMImageStrCodec* pSC)
             if(cSize >= 0x3fffffff)
                 return ICERR_ERROR;
         }
-        pSC->pResU = (PixelI *)malloc(cSize * sizeof(PixelI));
-        pSC->pResV = (PixelI *)malloc(cSize * sizeof(PixelI));
+        pSC->pResU = (PixelI *)malloc_dbg(cSize * sizeof(PixelI));
+        pSC->pResV = (PixelI *)malloc_dbg(cSize * sizeof(PixelI));
         if(pSC->pResU == NULL || pSC->pResV == NULL){
             return ICERR_ERROR;
         }
     }
 
     pSC->cTileColumn = pSC->cTileRow = 0;
-
+#ifdef MEMHACK
+    pSC->pTile = g_jxr_enc_mem_ptr[MEMPTR_STRENCTILE];
+#endif
     if(allocateTileInfo(pSC) != ICERR_OK)
         return ICERR_ERROR;
-
+#ifdef MEMHACK
+    g_jxr_enc_mem_ptr[MEMPTR_STRENCTILE] = pSC->pTile;
+#endif
     if(pSC->m_param.bTranscode == FALSE){
         pSC->m_param.uQPMode = 0x150;   // 101010 000
                                         // 000    == uniform (not per tile) DC, LP, HP
@@ -1020,9 +1035,14 @@ Int StrEncInit(CWMImageStrCodec* pSC)
     }
 
     if((pSC->m_param.uQPMode & 1) == 0){ // DC frame uniform quantization
-        if(allocateQuantizer(pSC->pTile[0].pQuantizerDC, pSC->m_param.cNumChannels, 1) != ICERR_OK)
+#ifdef MEMHACK
+    	pSC->pTile[0].pQuantizerDC[0] = g_jxr_enc_mem_ptr[MEMPTR_QUANTIZERDC];
+#endif
+    	if(allocateQuantizer(pSC->pTile[0].pQuantizerDC, pSC->m_param.cNumChannels, 1) != ICERR_OK)
             return ICERR_ERROR;
-        setUniformQuantizer(pSC, 0);
+#ifdef MEMHACK
+    	g_jxr_enc_mem_ptr[MEMPTR_QUANTIZERDC] = pSC->pTile[0].pQuantizerDC[0]; setUniformQuantizer(pSC, 0);
+#endif
         for(i = 0; i < pSC->m_param.cNumChannels; i ++)
             if(pSC->m_param.bTranscode)
                 pSC->pTile[0].pQuantizerDC[i]->iIndex = pSC->m_param.uiQPIndexDC[i];
@@ -1036,9 +1056,14 @@ Int StrEncInit(CWMImageStrCodec* pSC)
 
     if(pSC->WMISCP.sbSubband != SB_DC_ONLY){
         if((pSC->m_param.uQPMode & 2) == 0){ // LP frame uniform quantization
-            if(allocateQuantizer(pSC->pTile[0].pQuantizerLP, pSC->m_param.cNumChannels, 1) != ICERR_OK)
+#ifdef MEMHACK
+        	pSC->pTile[0].pQuantizerLP[0] = g_jxr_enc_mem_ptr[MEMPTR_QUANTIZERLP];
+#endif
+        	if(allocateQuantizer(pSC->pTile[0].pQuantizerLP, pSC->m_param.cNumChannels, 1) != ICERR_OK)
                 return ICERR_ERROR;
-            setUniformQuantizer(pSC, 1);
+#ifdef MEMHACK
+        	g_jxr_enc_mem_ptr[MEMPTR_QUANTIZERLP] = pSC->pTile[0].pQuantizerLP[0]; setUniformQuantizer(pSC, 1);
+#endif
             for(i = 0; i < pSC->m_param.cNumChannels; i ++)
                 if(pSC->m_param.bTranscode)
                     pSC->pTile[0].pQuantizerLP[i]->iIndex = pSC->m_param.uiQPIndexLP[i];
@@ -1049,9 +1074,14 @@ Int StrEncInit(CWMImageStrCodec* pSC)
 
         if(pSC->WMISCP.sbSubband != SB_NO_HIGHPASS){
             if((pSC->m_param.uQPMode & 4) == 0){ // HP frame uniform quantization
-                if(allocateQuantizer(pSC->pTile[0].pQuantizerHP, pSC->m_param.cNumChannels, 1) != ICERR_OK)
+#ifdef MEMHACK
+            	pSC->pTile[0].pQuantizerHP[0] = g_jxr_enc_mem_ptr[MEMPTR_QUANTIZERHP];
+#endif
+            	if(allocateQuantizer(pSC->pTile[0].pQuantizerHP, pSC->m_param.cNumChannels, 1) != ICERR_OK)
                     return ICERR_ERROR;
-                setUniformQuantizer(pSC, 2);
+#ifdef MEMHACK
+            	g_jxr_enc_mem_ptr[MEMPTR_QUANTIZERHP] = pSC->pTile[0].pQuantizerHP[0]; setUniformQuantizer(pSC, 2);
+#endif
                 for(i = 0; i < pSC->m_param.cNumChannels; i ++)
                     if(pSC->m_param.bTranscode)
                         pSC->pTile[0].pQuantizerHP[i]->iIndex = pSC->m_param.uiQPIndexHP[i];
@@ -1062,10 +1092,15 @@ Int StrEncInit(CWMImageStrCodec* pSC)
         }
     }
 
+#ifdef MEMHACK
+    pSC->pPredInfoMemory = g_jxr_enc_mem_ptr[MEMPTR_PREDIFOMEM];
+#endif
     if(allocatePredInfo(pSC) != ICERR_OK){
         return ICERR_ERROR;
     }
-
+#ifdef MEMHACK
+    g_jxr_enc_mem_ptr[MEMPTR_PREDIFOMEM] = pSC->pPredInfoMemory;
+#endif
     if(pSC->WMISCP.cNumOfSliceMinus1V >= MAX_TILES || AllocateCodingContextEnc (pSC, pSC->WMISCP.cNumOfSliceMinus1V + 1, pSC->WMISCP.uiTrimFlexBits) != ICERR_OK){
         return ICERR_ERROR;
     }
@@ -1100,20 +1135,19 @@ static Int StrEncTerm(CTXSTRCODEC ctxSC)
 
         if(pSC->m_bUVResolutionChange){
             if(pSC->pResU != NULL)
-                free(pSC->pResU);
+                free_dbg(pSC->pResU);
             if(pSC->pResV != NULL)
-                free(pSC->pResV);
+                free_dbg(pSC->pResV);
         }
-
+#ifndef MEMHACK
         freePredInfo(pSC);
-
+#endif
         if (j == 0)
             StrIOEncTerm(pSC);
-
+#ifndef MEMHACK
         FreeCodingContextEnc(pSC);
-        
         freeTileInfo(pSC);
-
+#endif
         pSC->WMISCP.nExpBias -= 128; // reset
 
         pSC = pSC->m_pNextSC;
@@ -1382,7 +1416,13 @@ Int ImageStrEncInit(
     i *= cMacBlock * 2;
     cb += i;
 
-    pb = malloc(cb);
+#ifdef MEMHACK
+    g_jxr_enc_mem_ptr[MEMPTR_STRENCPB] = realloc_dbg(g_jxr_enc_mem_ptr[MEMPTR_STRENCPB], cb);
+    pb = g_jxr_enc_mem_ptr[MEMPTR_STRENCPB];
+#else
+    pb = malloc_dbg(cb);
+#endif
+
     if (NULL == pb)
     {
         goto ErrorExit;
@@ -1438,7 +1478,7 @@ Int ImageStrEncInit(
         // 1. allocate new pNextSC info
         //================================================
         cb = sizeof(*pNextSC) + (128 - 1) + cbMacBlockStride * cMacBlock * 2;
-        pb = malloc(cb);
+        pb = malloc_dbg(cb);
         if (NULL == pb)
         {
             goto ErrorExit;
@@ -1594,8 +1634,9 @@ Int ImageStrEncTerm(
     PERFTIMER_REPORT(pSC->m_fMeasurePerf, pSC);
     PERFTIMER_DELETE(pSC->m_fMeasurePerf, pSC->m_ptEncDecPerf);
     PERFTIMER_DELETE(pSC->m_fMeasurePerf, pSC->m_ptEndToEndPerf);
-
-    free(pSC);
+#ifndef MEMHACK
+    free_dbg(pSC);
+#endif
     return ICERR_OK;
 }
 

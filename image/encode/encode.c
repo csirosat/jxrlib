@@ -1,14 +1,14 @@
 //*@@@+++@@@@******************************************************************
 //
-// Copyright © Microsoft Corp.
+// Copyright ï¿½ Microsoft Corp.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 // 
-// • Redistributions of source code must retain the above copyright notice,
+// ï¿½ Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the following disclaimer.
-// • Redistributions in binary form must reproduce the above copyright notice,
+// ï¿½ Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 // 
@@ -31,6 +31,8 @@
 #include "encode.h"
 #include "strcodec.h"
 #include "common.h"
+#include "tools/JXRGlobals.h"
+#include "tools/mem_dbg.h""
 
 #ifdef MEM_TRACE
 #define TRACE_MALLOC    1
@@ -62,7 +64,12 @@ Int AllocateCodingContextEnc(CWMImageStrCodec *pSC, Int iNumContexts, Int iTrimF
     if (pSC == NULL)
         return ICERR_ERROR;
 
-    pSC->m_pCodingContext = malloc (iNumContexts * sizeof (CCodingContext));
+#ifdef MEMHACK
+    pSC->m_pCodingContext = realloc_dbg (g_jxr_enc_mem_ptr[MEMPTR_CODINGCTXT], iNumContexts * sizeof (CCodingContext));
+    g_jxr_enc_mem_ptr[MEMPTR_CODINGCTXT] = pSC->m_pCodingContext;
+#else
+    pSC->m_pCodingContext = malloc_dbg (iNumContexts * sizeof (CCodingContext));
+#endif
     if (pSC->m_pCodingContext == NULL) {
         pSC->cNumCodingContext = 0;
         return ICERR_ERROR;
@@ -78,17 +85,33 @@ Int AllocateCodingContextEnc(CWMImageStrCodec *pSC, Int iNumContexts, Int iTrimF
         CCodingContext *pContext = &(pSC->m_pCodingContext[i]);
 
         /** allocate adaptive Huffman encoder **/    
+#ifdef MEMHACK
+        pContext->m_pAdaptHuffCBPCY = Allocate (g_jxr_enc_mem_ptr[MEMPTR_HUFFCBPCY], iCBPSize, ENCODER);
+        g_jxr_enc_mem_ptr[MEMPTR_HUFFCBPCY] = pContext->m_pAdaptHuffCBPCY;
+#else
         pContext->m_pAdaptHuffCBPCY = Allocate (iCBPSize, ENCODER);
+#endif
         if(pContext->m_pAdaptHuffCBPCY == NULL) {
             return ICERR_ERROR;
         }
+
+#ifdef MEMHACK
+        pContext->m_pAdaptHuffCBPCY1 = Allocate (g_jxr_enc_mem_ptr[MEMPTR_HUFFCBPCY1], 5, ENCODER);
+        g_jxr_enc_mem_ptr[MEMPTR_HUFFCBPCY1] = pContext->m_pAdaptHuffCBPCY1;
+#else
         pContext->m_pAdaptHuffCBPCY1 = Allocate(5, ENCODER);
+#endif
         if(pContext->m_pAdaptHuffCBPCY1 == NULL){
             return ICERR_ERROR;
         }
 
         for(k = 0; k < NUMVLCTABLES; k ++){
+#ifdef MEMHACK
+        	pContext->m_pAHexpt[k] = Allocate(g_jxr_enc_mem_ptr[MEMPTR_VLCTABLES+k], aAlphabet[k], ENCODER);
+            g_jxr_enc_mem_ptr[MEMPTR_VLCTABLES+k] = pContext->m_pAHexpt[k];
+#else
             pContext->m_pAHexpt[k] = Allocate(aAlphabet[k], ENCODER);
+#endif
             if(pContext->m_pAHexpt[k] == NULL){
                 return ICERR_ERROR;
             }
@@ -138,7 +161,7 @@ Void FreeCodingContextEnc(CWMImageStrCodec *pSC)
             for (k = 0; k < NUMVLCTABLES; k++)
                 Clean (pContext->m_pAHexpt[k]);
         }
-        free (pSC->m_pCodingContext);
+        free_dbg(pSC->m_pCodingContext);
     }
 }
 
